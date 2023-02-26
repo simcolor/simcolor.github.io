@@ -1,6 +1,5 @@
 ---
 title: Welcome to my notes
-layout: custom
 ---
 
 Hello! This is my barebone website, only a md file. I might as well use txt file as the website, but md sounds more professional. 
