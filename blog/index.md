@@ -8,3 +8,12 @@
     {% endif %}
   {% endfor %}
 </ul>
+
+{{ page.dir }}
+
+
+<ul>
+  {% for file in site.pages %}
+    <li>{{ file.name }}, {{ file.path }}</li>
+  {% endfor %}
+</ul>
