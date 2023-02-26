@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ page.title }}</title>
+  {% include head.html %}
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="{{ site.baseurl }}/">
+        <img src="{{ site.baseurl }}/assets/images/logo.png" alt="My Site Logo">
+      </a>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="{{ site.baseurl }}/about/">About</a></li>
+        <li><a href="{{ site.baseurl }}/blog/">Blog</a></li>
+        <li><a href="{{ site.baseurl }}/contact/">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="content">
+    {{ content }}
+  </div>
+  <footer>
+    <p>Copyright &copy; {{ site.time | date: "%Y" }}
+      <a href="{{ site.baseurl }}/">{{ site.title }}</a></p>
+  </footer>
+</body>
+</html>
