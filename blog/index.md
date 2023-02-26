@@ -1,5 +1,4 @@
 # Index
-
 <table>
   <thead>
     <tr>
@@ -8,13 +7,13 @@
     </tr>
   </thead>
   <tbody>
-    {% for file in site.static_files %}
-   
-    <tr>
-      <td><a href="{{ file.path }}">{{ file.basename }}</a></td>
-      <td>{{ file.modified_time | date_to_string }}</td>
-    </tr>
-    
+    {% for page in site.pages %}
+      {% if page.path contains './' and page.path contains '.md' %}
+        <tr>
+          <td><a href="{{ page.path }}">{{ page.name | replace: '.md', '' }}</a></td>
+          <td>{{ page.last_modified_at | date_to_string }}</td>
+        </tr>
+      {% endif %}
     {% endfor %}
   </tbody>
 </table>
