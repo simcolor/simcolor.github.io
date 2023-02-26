@@ -1,3 +1,7 @@
+---
+title: Welcome to my notes
+---
+
 Hello! This is my barebone website, only a md file. I might as well use txt file as the website, but md sounds more professional. 
 
 Since what I do mostly is just typing, I see no need to be fancy. 
