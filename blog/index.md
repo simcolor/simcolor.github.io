@@ -8,7 +8,9 @@
   {% for file in site.pages %}
     {% if file.path contains dir %}
       {% if file.name != "index.md" %}
-        <li><a href="{{ file.url | remove: '.md'}}">{{ file.name | remove: '.md' }}</a></li>
+         <li><a href="{{ file.url | remove: '.md' }}">{{ file.name | remove: '.md' }}</a>
+          <a href="{{ 'https://github.com/simcolor/simcolor.github.io/edit/main/blog/' | append: file.name }}">(edit)</a>
+        </li>
       {% endif %}
     {% endif %}
   {% endfor %}
