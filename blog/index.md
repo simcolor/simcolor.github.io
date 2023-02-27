@@ -1,7 +1,9 @@
 # Index
 
-{% assign dir = page.dir | remove_first: '/' %}
+[Create a new blog post](https://github.com/simcolor/simcolor.github.io/new/main/blog)
 
+
+{% assign dir = page.dir | remove_first: '/' %}
 <ul>
   {% for file in site.pages %}
     {% if file.path contains dir %}
