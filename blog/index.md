@@ -17,3 +17,5 @@
   {% endfor %}
 </ul>
 
+{{ user | debug }}
+
