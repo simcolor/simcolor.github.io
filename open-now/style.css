@@ -1,0 +1,185 @@
+:root{
+  --ink:#eef6f6;
+  --ink-dim:#9fc4c4;
+  --bg-0:#07211f;
+  --bg-1:#0d302d;
+  --bg-2:#123f3c;
+  --line:#1e4d49;
+  --open:#5fe3c0;
+  --open-dim:#173c34;
+  --soon:#f2c14e;
+  --soon-dim:#3a300f;
+  --closed:#5a7d7a;
+  --closed-dim:#132f2d;
+  --display: "Oswald", "Arial Narrow", sans-serif;
+  --body: "Inter", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, #114b46 0%, transparent 60%),
+    radial-gradient(ellipse 700px 400px at 100% 0%, #0d3a36 0%, transparent 55%),
+    var(--bg-0);
+  color:var(--ink);
+  font-family:var(--body);
+  min-height:100vh;
+  padding:28px 18px 60px;
+}
+.wrap{max-width:760px;margin:0 auto}
+
+header{margin-bottom:28px}
+
+.eyebrow{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.eyebrow::before{
+  content:"";
+  width:7px;height:7px;border-radius:50%;
+  background:var(--open);
+  box-shadow:0 0 0 3px var(--open-dim);
+  flex:none;
+}
+h1{
+  font-family:var(--display);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  font-size:clamp(30px,7vw,42px);
+  margin:8px 0 4px;
+  line-height:1.02;
+}
+.sub{color:var(--ink-dim);font-size:14.5px;line-height:1.5;max-width:52ch}
+.clock{
+  font-family:var(--mono);
+  font-size:13px;
+  color:var(--ink-dim);
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px dashed var(--line);
+}
+.clock b{color:var(--ink);font-weight:600}
+
+.day-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:16px 0 24px;
+}
+.day-tab{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.04em;
+  color:var(--ink-dim);
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:7px 12px;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.day-tab:hover{border-color:#2a6b5c}
+.day-tab.active{
+  color:var(--bg-0);
+  background:var(--open);
+  border-color:var(--open);
+  font-weight:600;
+}
+
+.board{
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  margin-bottom:28px;
+}
+.section-title{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  margin:0 0 10px 2px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.row{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:14px;
+  padding:18px 20px;
+  border-bottom:1px solid var(--line);
+  transition:background .2s ease;
+}
+.row:last-child{border-bottom:none}
+.row.is-open{background:linear-gradient(90deg, var(--open-dim), transparent 70%)}
+
+.place-name{
+  font-family:var(--display);
+  font-weight:500;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  font-size:19px;
+}
+.place-meta{
+  margin-top:5px;
+  font-family:var(--mono);
+  font-size:12.5px;
+  color:var(--ink-dim);
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 10px;
+}
+.place-meta a{color:var(--ink-dim)}
+
+.status{
+  text-align:right;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+  flex:none;
+}
+.pill{
+  font-family:var(--mono);
+  font-size:11.5px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+.pill.open{background:var(--open-dim);color:var(--open);border:1px solid #2a6b5c}
+.pill.soon{background:var(--soon-dim);color:var(--soon);border:1px solid #5c4a17}
+.pill.closed{background:var(--closed-dim);color:var(--closed);border:1px solid #244945}
+
+.window{
+  font-family:var(--mono);
+  font-size:12.5px;
+  color:var(--ink-dim);
+}
+.window b{color:var(--ink);font-weight:600}
+
+footer{
+  margin-top:26px;
+  font-size:12.5px;
+  color:var(--ink-dim);
+  line-height:1.6;
+  padding-top:18px;
+  border-top:1px dashed var(--line);
+}
+
+@media (max-width:480px){
+  .row{grid-template-columns:1fr;row-gap:10px}
+  .status{align-items:flex-start;text-align:left}
+}
