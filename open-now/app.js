@@ -155,6 +155,15 @@ function programName(place){
   return place.desc.split("·")[0].trim();
 }
 
+// "45m", "1h 20m", "4h" — the countdown under the hours. Past two hours the
+// minutes stop mattering, so they're rounded away.
+function relTime(mins){
+  if (mins < 60) return `${mins}m`;
+  if (mins >= 120) return `${Math.round(mins/60)}h`;
+  const m = mins % 60;
+  return m === 0 ? "1h" : `1h ${m}m`;
+}
+
 let selectedDay = null; // null = live mode; 0-6 = browsing that day's schedule
 
 function renderDayTabs(){
@@ -176,85 +185,129 @@ function renderDayTabs(){
   });
 }
 
-function renderSection(label, places, kind){
+// How early a place counts as opening "Soon" — drives the amber colour.
+const SOON_MINUTES = 90;
+
+// Everything a row needs to know about one place: which of today's windows
+// are behind, current, and ahead, and what to say about the next change.
+function evaluate(place, ctx){
+  const { realDay, mins, browsingDay, isLiveMode } = ctx;
+
+  const daySessions = place.sessions
+    .filter(s => s.day === browsingDay)
+    .sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+
+  let activeSession = null;
+  if (browsingDay === realDay){
+    for (const s of daySessions){
+      if (mins >= toMinutes(s.start) && mins < toMinutes(s.end)){
+        activeSession = s; break;
+      }
+    }
+  }
+
+  let nextSession = null, daysAhead = 0;
+  if (isLiveMode && !activeSession){
+    for (let d = 0; d <= 7; d++){
+      const checkDay = (realDay + d) % 7;
+      const candidates = place.sessions
+        .filter(s => s.day === checkDay)
+        .filter(s => d > 0 || toMinutes(s.start) > mins)
+        .sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+      if (candidates.length){ nextSession = candidates[0]; daysAhead = d; break; }
+    }
+  }
+
+  // Status is a claim about right now, so browsing another day has none.
+  let statusClass = "", statusText = "";
+  if (isLiveMode){
+    if (place.sessions.length === 0){
+      statusClass = "closed"; statusText = "Hours unknown";
+    } else if (activeSession){
+      statusClass = "open"; statusText = "Open now";
+    } else if (nextSession && daysAhead === 0
+               && (toMinutes(nextSession.start) - mins) <= SOON_MINUTES){
+      statusClass = "soon"; statusText = "Opening soon";
+    } else {
+      statusClass = "closed"; statusText = "Closed";
+    }
+  }
+
+  return { place, daySessions, activeSession, nextSession, daysAhead,
+           statusClass, statusText };
+}
+
+// The right-hand column: one line per window today, dimming the ones that have
+// already finished, plus a countdown to whatever happens next.
+function hoursColumn(ev, ctx){
+  const { isLiveMode, mins, realDay, browsingDay } = ctx;
+  const { place, daySessions, activeSession, nextSession, daysAhead } = ev;
+  const isToday = browsingDay === realDay;
+
+  let windows;
+  if (place.sessions.length === 0){
+    windows = [`<span class="now-window past">Hours not verified</span>`];
+  } else if (daySessions.length){
+    windows = daySessions.map(s => {
+      // `up` is the one window the countdown refers to — it alone takes the
+      // amber when the place is about to open.
+      let cls = "later";
+      if (isToday){
+        if (s === activeSession) cls = "now";
+        else if (mins >= toMinutes(s.end)) cls = "past";
+        else if (s === nextSession) cls = "up";
+      }
+      return `<span class="now-window ${cls}">${fmt(s.start)}–${fmt(s.end)}</span>`;
+    });
+  } else {
+    windows = [`<span class="now-window shut">${isLiveMode ? "Closed today" : "Closed"}</span>`];
+  }
+
+  let note = "";
+  if (isLiveMode){
+    if (activeSession){
+      note = `closes in ${relTime(toMinutes(activeSession.end) - mins)}`;
+    } else if (nextSession && daysAhead === 0){
+      note = `opens in ${relTime(toMinutes(nextSession.start) - mins)}`;
+    } else if (nextSession){
+      const when = daysAhead === 1 ? "tomorrow" : DAY_NAMES[nextSession.day];
+      note = `opens ${when} ${fmt(nextSession.start)}`;
+    }
+  }
+
+  return windows.join("") + (note ? `<span class="now-note">${note}</span>` : "");
+}
+
+function renderSection(label, places){
   const section = document.createElement("section");
   section.className = "now-section";
   section.innerHTML = `<h2>${label}</h2><div class="now-rule"></div>`;
 
   const now = new Date();
-  const realDay = now.getDay();
-  const mins = now.getHours()*60 + now.getMinutes();
-  const browsingDay = selectedDay === null ? realDay : selectedDay;
-  const isLiveMode = selectedDay === null;
+  const ctx = {
+    realDay: now.getDay(),
+    mins: now.getHours()*60 + now.getMinutes(),
+    browsingDay: selectedDay === null ? now.getDay() : selectedDay,
+    isLiveMode: selectedDay === null,
+  };
 
-  places.forEach(place => {
-    const daySessions = place.sessions
-      .filter(s => s.day === browsingDay)
-      .sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+  // The authored order is never disturbed — the list is short enough that a
+  // fixed position per venue is easier to read than one that re-sorts itself.
+  const rows = places.map(place => evaluate(place, ctx));
 
-    let activeSession = null;
-    if (isLiveMode || browsingDay === realDay){
-      for (const s of daySessions){
-        if (mins >= toMinutes(s.start) && mins < toMinutes(s.end)){
-          activeSession = s; break;
-        }
-      }
-    }
+  rows.forEach(ev => {
+    const place = ev.place;
 
-    let nextSession = null, daysAhead = 0;
-    if (isLiveMode && !activeSession){
-      for (let d = 0; d <= 7; d++){
-        const checkDay = (realDay + d) % 7;
-        const candidates = place.sessions
-          .filter(s => s.day === checkDay)
-          .filter(s => d > 0 || toMinutes(s.start) > mins)
-          .sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
-        if (candidates.length){ nextSession = candidates[0]; daysAhead = d; break; }
-      }
-    }
-
-    // The line under the name: today's windows, phrased like the NOW
-    // dashboard — "Open 10am–6pm" for libraries, "<program> 4:30pm–8pm"
-    // for pools, "Closed today" when nothing is scheduled.
-    let detail;
-    if (place.sessions.length === 0){
-      detail = "Hours not verified";
-    } else if (daySessions.length){
-      const windows = daySessions.map(s => `${fmt(s.start)}–${fmt(s.end)}`).join(", ");
-      detail = kind === "library" ? `Open ${windows}` : `${programName(place)} ${windows}`;
-    } else {
-      detail = isLiveMode ? "Closed today" : "Closed";
-    }
-
-    // Nothing left today — say when it next opens, so a closed row is
-    // still useful to read.
-    if (isLiveMode && !activeSession && nextSession && !daySessions.length){
-      const when = daysAhead === 1 ? "tomorrow" : DAY_NAMES[nextSession.day];
-      detail += ` · next ${when} ${fmt(nextSession.start)}`;
-    }
-
-    // Open/Closed is a statement about right now, so it only belongs in
-    // live mode — when browsing another day the hours line says it all.
-    let statusHtml = "";
-    if (isLiveMode){
-      let statusClass = "closed", statusText = "Closed";
-      if (activeSession){
-        statusClass = "open"; statusText = "Open";
-      } else if (nextSession && daysAhead === 0
-                 && (toMinutes(nextSession.start) - mins) <= 90){
-        statusClass = "soon"; statusText = "Soon";
-      }
-      statusHtml = `<span class="now-status ${statusClass}">${statusText}</span>`;
-    }
+    // Colour alone carries the status now, so spell it out for screen readers.
+    const aria = ev.statusText ? ` aria-label="${ev.statusText}"` : "";
 
     const row = document.createElement("div");
-    row.className = "now-row";
+    row.className = ev.statusClass ? `now-row ${ev.statusClass}` : "now-row";
     row.innerHTML = `
       <div class="now-facility">
-        <strong><a href="${place.url}" target="_blank" rel="noopener" title="${place.address}">${place.name}</a></strong>
-        <span>${detail}</span>
+        <strong><a href="${place.url}" target="_blank" rel="noopener" title="${programName(place)} · ${place.address}">${place.name}</a></strong>
       </div>
-      ${statusHtml}
+      <div class="now-hours"${aria}>${hoursColumn(ev, ctx)}</div>
     `;
     section.appendChild(row);
   });
@@ -278,13 +331,14 @@ function render(){
   const boardsEl = document.getElementById("boards");
   boardsEl.innerHTML = "";
 
+  // The heading carries the program name, since the rows no longer do.
   const CATEGORIES = [
-    { label: "Libraries", places: LIBRARIES, kind: "library" },
-    { label: "Pools", places: POOLS, kind: "pool" },
+    { label: "Libraries", places: LIBRARIES },
+    { label: "Pools (Family Swim)", places: POOLS },
   ];
 
   CATEGORIES.forEach(cat => {
-    boardsEl.appendChild(renderSection(cat.label, cat.places, cat.kind));
+    boardsEl.appendChild(renderSection(cat.label, cat.places));
   });
 }
 
