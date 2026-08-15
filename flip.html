@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>FLIP — a checkerboard puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #E7ECF2;
+    --bg-line: rgba(35,42,59,0.055);
+    --card: #FAF7F0;
+    --ink: #232A3B;
+    --muted: #6B7280;
+    --cell-white: #FFFDF9;
+    --cell-black: #2E3A56;
+    --cell-black-face: #313E5C;
+    --accent: #C99A3B;
+    --accent-soft: rgba(201,154,59,0.20);
+    --accent-soft-2: rgba(201,154,59,0.10);
+    --success: #4C8C6B;
+    --success-soft: rgba(76,140,107,0.14);
+    --line: rgba(35,42,59,0.14);
+    --line-soft: rgba(35,42,59,0.08);
+    --radius: 14px;
+    --board-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 18px 40px -20px rgba(35,42,59,0.45);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    background:
+      linear-gradient(var(--bg-line) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--bg-line) 1px, transparent 1px) 0 0/28px 28px,
+      var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:36px 16px 64px;
+  }
+
+  .card{
+    width:100%;
+    max-width:420px;
+    background:var(--card);
+    border:1px solid var(--line-soft);
+    border-radius:20px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.7) inset, 0 30px 60px -34px rgba(35,42,59,0.5);
+    padding:26px 24px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0; height:5px;
+    background:repeating-linear-gradient(90deg, var(--accent) 0 10px, transparent 10px 20px);
+    opacity:0.55;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 6px;
+  }
+
+  h1{
+    font-family:"Fraunces", serif;
+    font-optical-sizing:auto;
+    font-weight:700;
+    font-size:40px;
+    line-height:1;
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+
+  .instructions{
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.5;
+    margin:0 auto;
+    max-width:300px;
+  }
+
+  .modes{
+    display:flex;
+    gap:6px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:18px 0 20px;
+  }
+
+  .chip{
+    font-family:inherit;
+    font-size:11.5px;
+    letter-spacing:0.02em;
+    padding:7px 12px;
+    border-radius:100px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .chip:hover{ border-color:var(--accent); }
+  .chip.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--card);
+  }
+  .chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .board-wrap{
+    position:relative;
+    width:min(78vw, 300px);
+    aspect-ratio:1/1;
+    margin:0 auto;
+    perspective:900px;
+  }
+
+  .board-grid{
+    position:absolute;
+    inset:0;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(4,1fr);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:var(--board-shadow);
+    border:1px solid var(--line);
+  }
+
+  .cell{
+    position:relative;
+    perspective:700px;
+  }
+
+  .cell-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.5,.06,.24,1);
+  }
+
+  .cell-face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+  }
+  .cell-face.white{ background:var(--cell-white); }
+  .cell-face.black{
+    background:var(--cell-black-face);
+    transform:rotateY(180deg);
+  }
+
+  .board-overlay{
+    position:absolute;
+    inset:0;
+    z-index:5;
+  }
+
+  .flip-btn{
+    position:absolute;
+    width:13%;
+    height:13%;
+    min-width:26px;
+    min-height:26px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #DFB55D, var(--accent) 70%);
+    box-shadow:0 2px 5px rgba(35,42,59,0.35), 0 0 0 3px var(--card);
+  }
+  .flip-btn:hover{ transform:translate(-50%,-50%) scale(1.12); }
+  .flip-btn:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:3px;
+  }
+  .flip-btn:active{ transform:translate(-50%,-50%) scale(0.94); }
+
+  .flip-btn .zone{
+    position:absolute;
+    left:50%; top:50%;
+    width:220%; height:220%;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    opacity:0;
+    background:var(--accent-soft);
+    border-radius:10px;
+    transition:opacity .15s;
+  }
+  .flip-btn:hover .zone,
+  .flip-btn:focus-visible .zone{ opacity:1; }
+
+  .flip-btn.hinting{
+    animation:hintPulse 1.1s ease-in-out 0;
+  }
+  .flip-btn.hinting .zone{
+    opacity:1;
+    background:var(--success-soft);
+  }
+  @keyframes hintPulse{
+    0%, 100%{ box-shadow:0 2px 5px rgba(35,42,59,0.35), 0 0 0 3px var(--card); }
+    50%{ box-shadow:0 2px 5px rgba(35,42,59,0.35), 0 0 0 3px var(--card), 0 0 0 9px var(--success-soft); }
+  }
+
+  .stats{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    margin:22px 0 16px;
+    font-size:12px;
+    color:var(--muted);
+    flex-wrap:wrap;
+  }
+  .stats b{
+    display:block;
+    font-size:17px;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .stat{ text-align:center; min-width:56px; }
+
+  .controls{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .btn{
+    font-family:inherit;
+    font-size:12px;
+    padding:9px 14px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s, border-color .15s, transform .1s;
+  }
+  .btn:hover{ border-color:var(--ink); }
+  .btn:active{ transform:translateY(1px); }
+  .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .btn.primary{
+    background:var(--ink);
+    color:var(--card);
+    border-color:var(--ink);
+  }
+  .btn.primary:hover{ background:#2f3956; }
+
+  details{
+    margin-top:22px;
+    border-top:1px dashed var(--line);
+    padding-top:14px;
+  }
+  summary{
+    cursor:pointer;
+    font-size:12px;
+    color:var(--muted);
+    list-style:none;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{
+    content:"▸";
+    display:inline-block;
+    transition:transform .15s;
+    color:var(--accent);
+  }
+  details[open] summary::before{ transform:rotate(90deg); }
+  .why{
+    font-size:12.5px;
+    line-height:1.65;
+    color:var(--ink);
+    margin-top:12px;
+  }
+  .why p{ margin:0 0 10px; }
+  .why code{
+    background:var(--accent-soft-2);
+    padding:1px 5px;
+    border-radius:4px;
+  }
+
+  /* win overlay */
+  .win-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(35,42,59,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+    padding:20px;
+  }
+  .win-overlay.show{ opacity:1; pointer-events:auto; }
+
+  .win-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:28px 26px;
+    text-align:center;
+    max-width:300px;
+    width:100%;
+    transform:translateY(8px) scale(0.96);
+    transition:transform .25s;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5);
+  }
+  .win-overlay.show .win-card{ transform:translateY(0) scale(1); }
+
+  .win-card h2{
+    font-family:"Fraunces", serif;
+    font-size:26px;
+    margin:0 0 6px;
+    color:var(--success);
+  }
+  .stars{ font-size:22px; letter-spacing:4px; margin:10px 0; color:var(--accent); }
+  .win-detail{ font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  .win-best{ font-size:12px; color:var(--success); margin-bottom:16px; min-height:16px; }
+
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .cell-inner{ transition:none; }
+    .win-overlay, .win-card, .flip-btn{ transition:none; }
+    .flip-btn.hinting{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="card">
+    <header>
+      <p class="eyebrow">a checkerboard puzzle · Math Kangaroo</p>
+      <h1>FLIP</h1>
+      <p class="instructions">Tap a gold dot to flip the four squares around it. Turn the whole board white.</p>
+    </header>
+
+    <div class="modes" role="group" aria-label="Difficulty">
+      <button class="chip active" data-mode="classic">Classic</button>
+      <button class="chip" data-mode="easy">Easy</button>
+      <button class="chip" data-mode="medium">Medium</button>
+      <button class="chip" data-mode="hard">Hard</button>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board-grid" id="boardGrid" aria-hidden="true"></div>
+      <div class="board-overlay" id="boardOverlay"></div>
+    </div>
+    <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+
+    <div class="stats">
+      <div class="stat"><b id="statMoves">0</b>moves</div>
+      <div class="stat"><b id="statOptimal">0</b>left</div>
+      <div class="stat"><b id="statBest">—</b>best</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="btnNew">New puzzle</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnHint">Hint</button>
+    </div>
+
+    <details>
+      <summary>Why this always has one exact answer</summary>
+      <div class="why">
+        <p>Call white <code>0</code> and black <code>1</code>, and add colors mod 2 (mod 2 arithmetic: it wraps around every 2 steps, so <code>1+1=0</code>). Flipping a 2×2 block adds 1 to each of its four cells. Flip the same block twice and you're back where you started — a move undoes itself, so order never matters and no dot is ever worth pressing twice.</p>
+        <p>There are 9 possible blocks — one centered on each interior grid-line intersection. Each is a vector (a list of 16 numbers mod 2, one per cell) recording which cells it touches. Those 9 vectors turn out to be linearly independent — mathematician's phrase for "no smaller combination of them cancels out to all-zero." That means all 2⁹ = 512 subsets of moves land on 512 different boards, and since the map is invertible, every one of those boards has exactly one subset of moves that solves it. That's the whole trick: a unique shortest solution, and a hint button that never has to guess.</p>
+      </div>
+    </details>
+  </main>
+
+  <div class="win-overlay" id="winOverlay" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="win-card">
+      <h2 id="winTitle">Solved</h2>
+      <div class="stars" id="winStars"></div>
+      <div class="win-detail" id="winDetail"></div>
+      <div class="win-best" id="winBest"></div>
+      <button class="btn primary" id="btnNext">Next puzzle</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- GF(2) move tables ---------- */
+  // 9 possible 2x2 blocks, indexed by top-left corner (row0,col0) in {0,1,2}x{0,1,2}
+  // idx = row0*3 + col0
+  const FORWARD = new Array(512).fill(0);
+  const REVERSE = new Map();
+
+  (function buildTables(){
+    for (let mask = 0; mask < 512; mask++){
+      const b = Array.from({length:4}, () => [0,0,0,0]);
+      for (let idx = 0; idx < 9; idx++){
+        if (mask & (1 << idx)){
+          const row0 = Math.floor(idx/3), col0 = idx % 3;
+          b[row0][col0] ^= 1; b[row0][col0+1] ^= 1;
+          b[row0+1][col0] ^= 1; b[row0+1][col0+1] ^= 1;
+        }
+      }
+      let bitmask = 0;
+      for (let r=0;r<4;r++) for (let c=0;c<4;c++) if (b[r][c]) bitmask |= (1 << (r*4+c));
+      FORWARD[mask] = bitmask;
+      REVERSE.set(bitmask, mask);
+    }
+  })();
+
+  function popcount(n){ let c=0; while(n){ c += n & 1; n >>= 1; } return c; }
+
+  function boardToBitmask(board){
+    let m = 0;
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++) if (board[r][c]) m |= (1 << (r*4+c));
+    return m;
+  }
+  function bitmaskToBoard(mask){
+    const b = Array.from({length:4}, () => [0,0,0,0]);
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++) b[r][c] = (mask >> (r*4+c)) & 1;
+    return b;
+  }
+
+  function randomMaskWithPopcount(min, max){
+    const target = min + Math.floor(Math.random() * (max - min + 1));
+    const idxs = [0,1,2,3,4,5,6,7,8];
+    for (let i = idxs.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+    }
+    let mask = 0;
+    for (let i = 0; i < target; i++) mask |= (1 << idxs[i]);
+    return mask;
+  }
+
+  function checkerboardBoard(){
+    const b = Array.from({length:4}, () => [0,0,0,0]);
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++) b[r][c] = (r+c) % 2;
+    return b;
+  }
+
+  /* ---------- puzzle generation ---------- */
+  const RANGES = { easy:[2,3], medium:[4,5], hard:[6,9] };
+
+  function generateBoard(mode){
+    if (mode === "classic") return checkerboardBoard();
+    const [lo,hi] = RANGES[mode];
+    const mask = randomMaskWithPopcount(lo, hi);
+    return bitmaskToBoard(FORWARD[mask]);
+  }
+
+  /* ---------- DOM setup ---------- */
+  const boardGrid = document.getElementById("boardGrid");
+  const boardOverlay = document.getElementById("boardOverlay");
+  const statMoves = document.getElementById("statMoves");
+  const statOptimal = document.getElementById("statOptimal");
+  const statBest = document.getElementById("statBest");
+  const winOverlay = document.getElementById("winOverlay");
+  const winStars = document.getElementById("winStars");
+  const winDetail = document.getElementById("winDetail");
+  const winBest = document.getElementById("winBest");
+  const liveRegion = document.getElementById("liveRegion");
+
+  let mode = "classic";
+  let board = null;          // 4x4 array 0/1 (logical color state)
+  let rot = null;            // 4x4 array rotation counters (for flip animation)
+  let movesMade = 0;
+  let parInitial = 0;        // optimal moves needed from the puzzle's starting position
+  let solved = false;
+  let puzzleStart = null;    // deep copy of the board as first shown, for Reset
+
+  const cellEls = [];   // [r][c] -> {inner}
+  for (let r=0;r<4;r++){
+    cellEls.push([]);
+    for (let c=0;c<4;c++){
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const inner = document.createElement("div");
+      inner.className = "cell-inner";
+      const front = document.createElement("div");
+      front.className = "cell-face white";
+      const back = document.createElement("div");
+      back.className = "cell-face black";
+      inner.appendChild(front);
+      inner.appendChild(back);
+      cell.appendChild(inner);
+      boardGrid.appendChild(cell);
+      cellEls[r].push({inner});
+    }
+  }
+
+  const dotEls = [];
+  for (let idx=0; idx<9; idx++){
+    const row0 = Math.floor(idx/3), col0 = idx % 3;
+    const btn = document.createElement("button");
+    btn.className = "flip-btn";
+    btn.type = "button";
+    btn.style.left = ((col0+1) * 25) + "%";
+    btn.style.top = ((row0+1) * 25) + "%";
+    btn.dataset.idx = idx;
+    btn.setAttribute("aria-label", "Flip the 2 by 2 block with top-left corner at row " + (row0+1) + ", column " + (col0+1));
+    const zone = document.createElement("span");
+    zone.className = "zone";
+    btn.appendChild(zone);
+    btn.addEventListener("click", () => applyMove(row0, col0));
+    boardOverlay.appendChild(btn);
+    dotEls.push(btn);
+  }
+
+  /* ---------- storage (best scores) ---------- */
+  async function getBest(m){
+    try{
+      const res = await window.storage.get("flip-best-" + m, false);
+      if (res && res.value != null) return JSON.parse(res.value).best;
+    } catch(e){ /* no stored value yet, or storage unavailable */ }
+    return null;
+  }
+  async function setBestIfBetter(m, moves){
+    try{
+      const current = await getBest(m);
+      if (current == null || moves < current){
+        await window.storage.set("flip-best-" + m, JSON.stringify({best: moves}), false);
+        return true;
+      }
+    } catch(e){ /* storage unavailable — game still works fine */ }
+    return false;
+  }
+  async function refreshBestDisplay(){
+    const b = await getBest(mode);
+    statBest.textContent = (b == null) ? "—" : b;
+  }
+
+  /* ---------- rendering ---------- */
+  function setCellVisual(r, c, animate){
+    const target = board[r][c];
+    const current = rot[r][c] % 2;
+    if (target !== current) rot[r][c] += 1;
+    const el = cellEls[r][c].inner;
+    if (!animate){
+      el.style.transition = "none";
+      el.style.transform = "rotateY(" + (rot[r][c]*180) + "deg)";
+      // force reflow then restore transition
+      void el.offsetWidth;
+      el.style.transition = "";
+    } else {
+      el.style.transform = "rotateY(" + (rot[r][c]*180) + "deg)";
+    }
+  }
+
+  function updateStats(){
+    const bitmask = boardToBitmask(board);
+    const remaining = REVERSE.get(bitmask);
+    statMoves.textContent = movesMade;
+    statOptimal.textContent = popcount(remaining);
+    liveRegion.textContent = movesMade + " moves made, " + popcount(remaining) + " optimal moves left.";
+  }
+
+  function dealIn(){
+    // reveal the puzzle with a soft staggered flip, ink-stamp style
+    const order = [];
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++) if (board[r][c] === 1) order.push([r,c]);
+    order.sort(() => Math.random() - 0.5);
+    order.forEach(([r,c], i) => {
+      setTimeout(() => setCellVisual(r,c,true), 90 + i*70);
+    });
+  }
+
+  /* ---------- game actions ---------- */
+  function applyMove(row0, col0){
+    if (solved) return;
+    board[row0][col0] ^= 1; board[row0][col0+1] ^= 1;
+    board[row0+1][col0] ^= 1; board[row0+1][col0+1] ^= 1;
+    movesMade += 1;
+    setCellVisual(row0, col0, true);
+    setCellVisual(row0, col0+1, true);
+    setCellVisual(row0+1, col0, true);
+    setCellVisual(row0+1, col0+1, true);
+    updateStats();
+    if (boardToBitmask(board) === 0){
+      solved = true;
+      setTimeout(showWin, 420);
+    }
+  }
+
+  function loadPuzzle(newMode, opts){
+    opts = opts || {};
+    mode = newMode;
+    document.querySelectorAll(".chip").forEach(ch => ch.classList.toggle("active", ch.dataset.mode === mode));
+    board = opts.board || generateBoard(mode);
+    puzzleStart = board.map(row => row.slice());
+    movesMade = 0;
+    solved = false;
+    parInitial = popcount(REVERSE.get(boardToBitmask(board)));
+    // reset all cells to white instantly, then deal in
+    for (let r=0;r<4;r++) for (let c=0;c<4;c++){
+      cellEls[r][c].inner.style.transition = "none";
+      cellEls[r][c].inner.style.transform = "rotateY(0deg)";
+      void cellEls[r][c].inner.offsetWidth;
+      cellEls[r][c].inner.style.transition = "";
+    }
+    rot = Array.from({length:4}, () => [0,0,0,0]);
+    updateStats();
+    dealIn();
+    refreshBestDisplay();
+    hideWin();
+  }
+
+  function resetPuzzle(){
+    // same starting board, replay the reveal
+    loadPuzzle(mode, {board: puzzleStart.map(row => row.slice())});
+  }
+
+  function giveHint(){
+    if (solved) return;
+    const bitmask = boardToBitmask(board);
+    const requiredMask = REVERSE.get(bitmask);
+    if (requiredMask === 0) return;
+    dotEls.forEach(b => b.classList.remove("hinting"));
+    for (let idx=0; idx<9; idx++){
+      if (requiredMask & (1<<idx)){
+        const btn = dotEls[idx];
+        void btn.offsetWidth;
+        btn.classList.add("hinting");
+        setTimeout(() => btn.classList.remove("hinting"), 1200);
+        break;
+      }
+    }
+  }
+
+  async function showWin(){
+    const diff = movesMade - parInitial;
+    let stars;
+    if (diff <= 0) stars = "★★★";
+    else if (diff <= 2) stars = "★★☆";
+    else stars = "★☆☆";
+    winStars.textContent = stars;
+    winDetail.textContent = movesMade + " move" + (movesMade===1?"":"s") + " · optimal was " + parInitial;
+    liveRegion.textContent = "Solved in " + movesMade + " moves. Optimal was " + parInitial + ".";
+    const improved = await setBestIfBetter(mode, movesMade);
+    if (improved){
+      winBest.textContent = "New personal best for this mode";
+    } else {
+      const b = await getBest(mode);
+      winBest.textContent = (b != null) ? ("Best for this mode: " + b + " moves") : "";
+    }
+    winOverlay.classList.add("show");
+    refreshBestDisplay();
+  }
+  function hideWin(){ winOverlay.classList.remove("show"); }
+
+  /* ---------- wire up controls ---------- */
+  document.querySelectorAll(".chip").forEach(ch => {
+    ch.addEventListener("click", () => loadPuzzle(ch.dataset.mode));
+  });
+  document.getElementById("btnNew").addEventListener("click", () => loadPuzzle(mode));
+  document.getElementById("btnReset").addEventListener("click", resetPuzzle);
+  document.getElementById("btnHint").addEventListener("click", giveHint);
+  document.getElementById("btnNext").addEventListener("click", () => loadPuzzle(mode));
+
+  /* ---------- start ---------- */
+  loadPuzzle("classic");
+})();
+</script>
+</body>
+</html>
