@@ -1,239 +1,137 @@
+/* Layout and palette ported from the NOW dashboard
+   (open-now/app/globals.css — .now-page block). Values kept verbatim. */
 :root{
-  --ink:#f4fbfa;
-  --ink-dim:#bcdcd8;
-  --bg-0:#12403c;
-  --bg-1:#1a514c;
-  --bg-2:#215f59;
-  --line:#356f68;
-  --open:#7df0cf;
-  --open-dim:#245e50;
-  --soon:#ffd472;
-  --soon-dim:#54431c;
-  --closed:#9dbdb9;
-  --closed-dim:#245954;
-  --display: "Oswald", "Arial Narrow", sans-serif;
-  --body: "Inter", -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+  --ink:#123639;
+  --cream:#fbf8ef;
+  --line:#dce5df;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
-html{
-  -webkit-text-size-adjust:100%;
-  text-size-adjust:100%;
-}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;color-scheme:light}
 body{
-  background:
-    radial-gradient(ellipse 900px 500px at 15% -10%, #2a7c72 0%, transparent 60%),
-    radial-gradient(ellipse 700px 400px at 100% 0%, #1e625b 0%, transparent 55%),
-    var(--bg-0);
-  background-attachment:fixed;
+  margin:0;
+  background:var(--cream);
   color:var(--ink);
-  font-family:var(--body);
+  font-family:Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overflow-x:hidden;
+}
+h1,h2,p{margin:0}
+button{font:inherit;cursor:pointer}
+
+.now-page{
+  background:#fbfaf5;
+  color:#172f31;
+  margin:0 auto;
   min-height:100vh;
   min-height:100dvh;
-  overflow-x:hidden;
-  -webkit-tap-highlight-color:transparent;
-  padding:
-    max(28px, env(safe-area-inset-top))
-    max(18px, env(safe-area-inset-right))
-    max(60px, env(safe-area-inset-bottom))
-    max(18px, env(safe-area-inset-left));
+  padding:42px 22px 70px;
+  padding-left:max(22px, env(safe-area-inset-left));
+  padding-right:max(22px, env(safe-area-inset-right));
+  padding-bottom:max(70px, env(safe-area-inset-bottom));
+  width:min(100%,680px);
 }
-.wrap{max-width:760px;margin:0 auto}
-
-header{margin-bottom:28px}
-
-.eyebrow{
-  font-family:var(--mono);
-  font-size:12px;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--ink-dim);
+.now-header{
+  align-items:baseline;
   display:flex;
-  align-items:center;
-  gap:10px;
+  justify-content:space-between;
+  margin-bottom:48px;
 }
-.eyebrow::before{
-  content:"";
-  width:7px;height:7px;border-radius:50%;
-  background:var(--open);
-  box-shadow:0 0 0 3px var(--open-dim);
-  flex:none;
-}
-h1{
-  font-family:var(--display);
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.01em;
-  font-size:clamp(30px,7vw,42px);
-  margin:8px 0 4px;
-  line-height:1.02;
-}
-.sub{color:var(--ink-dim);font-size:14.5px;line-height:1.5;max-width:52ch}
-.clock{
-  font-family:var(--mono);
-  font-size:13px;
-  color:var(--ink-dim);
-  margin-top:14px;
-  padding-top:14px;
-  border-top:1px dashed var(--line);
-}
-.clock b{color:var(--ink);font-weight:600}
-
-.day-tabs{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  margin:16px 0 24px;
-}
-.day-tab{
-  font-family:var(--mono);
-  font-size:12px;
-  letter-spacing:.04em;
-  color:var(--ink-dim);
-  background:var(--bg-2);
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:7px 12px;
-  cursor:pointer;
-  transition:all .15s ease;
-  touch-action:manipulation;
-}
-.day-tab:hover{border-color:#4d8a80}
-.day-tab:active{transform:scale(.96)}
-.day-tab.active{
-  color:#0d332f;
-  background:var(--open);
-  border-color:var(--open);
-  font-weight:600;
-}
-
-.board{
-  border:1px solid var(--line);
-  border-radius:14px;
-  overflow:hidden;
-  background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
-  margin-bottom:28px;
-}
-.section-title{
-  font-family:var(--mono);
-  font-size:12px;
+.now-header h1{
+  font:800 30px/1 Arial, sans-serif;
   letter-spacing:.12em;
   text-transform:uppercase;
-  color:var(--ink-dim);
-  margin:0 0 10px 2px;
-  display:flex;
-  align-items:center;
-  gap:8px;
 }
-.row{
-  display:grid;
-  grid-template-columns:1fr auto;
-  align-items:center;
-  gap:14px;
-  padding:18px 20px;
-  border-bottom:1px solid var(--line);
-  transition:background .2s ease;
-}
-.row:last-child{border-bottom:none}
-.row.is-open{background:linear-gradient(90deg, var(--open-dim), transparent 70%)}
+.now-header time{color:#71817e;font-size:12px}
 
-.place-name{
-  font-family:var(--display);
-  font-weight:500;
+/* Day switcher, in the same idiom as the app's .filters segmented control. */
+.now-filters{
+  background:#ecefe9;
+  border-radius:10px;
+  display:flex;
+  padding:3px;
+  gap:2px;
+}
+.now-filters button{
+  background:transparent;
+  border:0;
+  border-radius:8px;
+  color:#59726e;
+  flex:1 1 0;
+  font-size:12px;
+  font-weight:700;
+  padding:8px 6px;
+  touch-action:manipulation;
+  transition:background .15s ease, color .15s ease;
+}
+.now-filters button.active{
+  background:white;
+  box-shadow:0 1px 4px #27484020;
+  color:var(--ink);
+}
+
+.now-section{margin-top:42px}
+.now-section h2{
+  font:800 12px/1 Arial, sans-serif;
+  letter-spacing:.14em;
   text-transform:uppercase;
-  letter-spacing:.02em;
-  font-size:19px;
 }
-.place-meta{
-  margin-top:5px;
-  font-family:var(--mono);
-  font-size:12.5px;
-  color:var(--ink-dim);
+.now-rule{background:#cad2cd;height:1px;margin:12px 0 2px}
+.now-row{
+  align-items:center;
+  border-bottom:1px solid #e2e5e0;
   display:flex;
-  flex-wrap:wrap;
-  gap:4px 10px;
+  gap:18px;
+  justify-content:space-between;
+  min-height:78px;
+  padding:15px 1px;
 }
-.place-meta a{color:var(--ink-dim);overflow-wrap:anywhere}
-
-.status{
-  text-align:right;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:6px;
-  flex:none;
-}
-.pill{
-  font-family:var(--mono);
-  font-size:11.5px;
+.now-facility{display:grid;gap:7px;min-width:0}
+.now-facility strong{font-size:15px;line-height:1.2}
+.now-facility a{color:inherit;text-decoration:none}
+.now-facility a:hover{text-decoration:underline}
+.now-facility span{color:#667672;font-size:12px;line-height:1.3}
+.now-status{
+  flex:0 0 auto;
+  font-size:11px;
+  font-weight:900;
   letter-spacing:.08em;
   text-transform:uppercase;
-  padding:4px 10px;
-  border-radius:999px;
-  white-space:nowrap;
 }
-.pill.open{background:var(--open-dim);color:var(--open);border:1px solid #4d8a80}
-.pill.soon{background:var(--soon-dim);color:var(--soon);border:1px solid #7a6528}
-.pill.closed{background:var(--closed-dim);color:var(--closed);border:1px solid #3d7b74}
-
-.window{
-  font-family:var(--mono);
-  font-size:12.5px;
-  color:var(--ink-dim);
-}
-.window b{color:var(--ink);font-weight:600}
-
-footer{
-  margin-top:26px;
-  font-size:12.5px;
-  color:var(--ink-dim);
+.now-status.open{color:#246846}
+.now-status.soon{color:#986a1e}
+.now-status.closed{color:#7c7770}
+.now-message,.now-empty{color:#71817e;font-size:13px}
+.now-empty{border-bottom:1px solid #e2e5e0;margin:0;padding:20px 1px}
+.now-footer{
+  color:#71817e;
+  font-size:12px;
   line-height:1.6;
+  margin-top:42px;
   padding-top:18px;
-  border-top:1px dashed var(--line);
+  border-top:1px solid #e2e5e0;
 }
 
-/* --- Phone (iPhone SE 375px through Pro Max 430px) --- */
-@media (max-width:560px){
-  .sub{font-size:14px}
+@media (max-width:480px){
+  .now-page{
+    padding:32px 18px 56px;
+    padding-left:max(18px, env(safe-area-inset-left));
+    padding-right:max(18px, env(safe-area-inset-right));
+    padding-bottom:max(56px, env(safe-area-inset-bottom));
+  }
+  .now-header{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:9px;
+    margin-bottom:38px;
+  }
+  .now-row{min-height:74px}
 
-  /* Tidy 4-across grid instead of a ragged wrap, with 44px tap targets. */
-  .day-tabs{
+  /* 4-across grid keeps every day a 44px tap target on a phone. */
+  .now-filters{
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:8px;
-    margin:14px 0 22px;
+    gap:3px;
   }
-  .day-tab{
-    padding:12px 4px;
-    font-size:13px;
-    text-align:center;
-    border-radius:10px;
-  }
-
-  .board{border-radius:12px;margin-bottom:22px}
-
-  /* Stack the status under the name, but keep pill + hours on one line
-     so each row stays short enough to scan without scrolling. */
-  .row{
-    grid-template-columns:1fr;
-    row-gap:8px;
-    padding:15px 16px;
-  }
-  .status{
-    flex-direction:row;
-    align-items:center;
-    flex-wrap:wrap;
-    gap:8px 10px;
-    text-align:left;
-  }
-  .place-name{font-size:17.5px}
-  .place-meta{font-size:12px;margin-top:4px}
-  .window{font-size:13px}
-  .pill{font-size:11px}
-}
-
-@media (max-width:380px){
-  .day-tabs{grid-template-columns:repeat(3,1fr)}
-  .row{padding:14px}
+  .now-filters button{padding:11px 4px}
 }

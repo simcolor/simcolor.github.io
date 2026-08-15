@@ -3,6 +3,24 @@
 // ---------------------------------------------------------------
 const POOLS = [
   {
+    name: "Albany Aquatic Center",
+    address: "1311 Portland Ave, Albany",
+    desc: "Family/Rec Swim (Indoor Pool) · Week of Aug 10–16",
+    url: "https://www.albanyaquaticcenter.com/pool-schedule",
+    sessions: [
+      { day:1, start:"16:30", end:"20:00" },
+      { day:2, start:"16:30", end:"20:00" },
+      { day:3, start:"16:30", end:"20:00" },
+      { day:4, start:"16:30", end:"20:00" },
+      { day:5, start:"16:45", end:"20:00" },
+      { day:6, start:"13:30", end:"16:00" },
+      { day:0, start:"13:30", end:"16:00" },
+      // Indoor pool only. Outdoor pool has no separately-listed
+      // Family/Rec Swim block. Sept 13 / Sept 20 one-off changes
+      // (Solano Stroll, Albany Triathlon) are not modeled here.
+    ]
+  },
+  {
     name: "El Cerrito Swim Center",
     address: "7007 Moeser Ln, El Cerrito",
     desc: "rECswim (Family Swim)",
@@ -15,16 +33,6 @@ const POOLS = [
       { day:5, start:"12:30", end:"15:00" },
       { day:6, start:"13:00", end:"16:00" },
       { day:0, start:"13:00", end:"16:00" },
-    ]
-  },
-  {
-    name: "Richmond Plunge",
-    address: "1 E Richmond Ave, Richmond",
-    desc: "Family Rec Swim (Shallow Rec)",
-    url: "https://www.richmondca.gov/2140/Richmond-Plunge",
-    sessions: [
-      { day:6, start:"13:30", end:"15:30" },
-      // Weekdays are mostly lap swim / masters, not family swim.
     ]
   },
   {
@@ -48,6 +56,16 @@ const POOLS = [
     ]
   },
   {
+    name: "Richmond Plunge",
+    address: "1 E Richmond Ave, Richmond",
+    desc: "Family Rec Swim (Shallow Rec)",
+    url: "https://www.richmondca.gov/2140/Richmond-Plunge",
+    sessions: [
+      { day:6, start:"13:30", end:"15:30" },
+      // Weekdays are mostly lap swim / masters, not family swim.
+    ]
+  },
+  {
     name: "West Campus Pool",
     address: "2100 Browning St, Berkeley",
     desc: "Family Swim (Shallow) · Fall sched. 8/10–10/11",
@@ -60,24 +78,6 @@ const POOLS = [
       { day:5, start:"07:00", end:"10:00" },
       { day:6, start:"16:30", end:"18:30" },
       { day:0, start:"08:00", end:"10:00" },
-    ]
-  },
-  {
-    name: "Albany Aquatic Center",
-    address: "1311 Portland Ave, Albany",
-    desc: "Family/Rec Swim (Indoor Pool) · Week of Aug 10–16",
-    url: "https://www.albanyaquaticcenter.com/pool-schedule",
-    sessions: [
-      { day:1, start:"16:30", end:"20:00" },
-      { day:2, start:"16:30", end:"20:00" },
-      { day:3, start:"16:30", end:"20:00" },
-      { day:4, start:"16:30", end:"20:00" },
-      { day:5, start:"16:45", end:"20:00" },
-      { day:6, start:"13:30", end:"16:00" },
-      { day:0, start:"13:30", end:"16:00" },
-      // Indoor pool only. Outdoor pool has no separately-listed
-      // Family/Rec Swim block. Sept 13 / Sept 20 one-off changes
-      // (Solano Stroll, Albany Triathlon) are not modeled here.
     ]
   },
 ];
@@ -152,11 +152,17 @@ function toMinutes(hhmm){
   return h*60+m;
 }
 
+// Matches the NOW dashboard's timeLabel(): "10am", "12:30pm".
 function fmt(hhmm){
   const [h,m] = hhmm.split(":").map(Number);
-  const period = h < 12 ? "AM" : "PM";
+  const period = h < 12 ? "am" : "pm";
   let h12 = h % 12; if (h12===0) h12=12;
   return m===0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2,"0")}${period}`;
+}
+
+// The program name only — drop the trailing schedule-period note.
+function programName(place){
+  return place.desc.split("·")[0].trim();
 }
 
 let selectedDay = null; // null = live mode; 0-6 = browsing that day's schedule
@@ -166,23 +172,25 @@ function renderDayTabs(){
   el.innerHTML = "";
 
   const nowBtn = document.createElement("button");
-  nowBtn.className = "day-tab" + (selectedDay === null ? " active" : "");
+  nowBtn.className = selectedDay === null ? "active" : "";
   nowBtn.textContent = "Now";
   nowBtn.onclick = () => { selectedDay = null; render(); };
   el.appendChild(nowBtn);
 
   DAY_NAMES.forEach((name, idx) => {
     const btn = document.createElement("button");
-    btn.className = "day-tab" + (selectedDay === idx ? " active" : "");
+    btn.className = selectedDay === idx ? "active" : "";
     btn.textContent = name;
     btn.onclick = () => { selectedDay = idx; render(); };
     el.appendChild(btn);
   });
 }
 
-function renderBoard(places){
-  const board = document.createElement("div");
-  board.className = "board";
+function renderSection(label, places, kind){
+  const section = document.createElement("section");
+  section.className = "now-section";
+  section.innerHTML = `<h2>${label}</h2><div class="now-rule"></div>`;
+
   const now = new Date();
   const realDay = now.getDay();
   const mins = now.getHours()*60 + now.getMinutes();
@@ -215,52 +223,65 @@ function renderBoard(places){
       }
     }
 
-    const row = document.createElement("div");
-    row.className = "row" + (activeSession ? " is-open" : "");
-
-    let pillHtml, windowHtml;
-    if (activeSession){
-      pillHtml = `<span class="pill open">${isLiveMode ? "Open now" : "Open"}</span>`;
-      windowHtml = `<span class="window"><b>${fmt(activeSession.start)}–${fmt(activeSession.end)}</b></span>`;
-    } else if (isLiveMode && nextSession){
-      const soon = daysAhead === 0 && (toMinutes(nextSession.start) - mins) <= 90;
-      const when = daysAhead === 0 ? "Today" : (daysAhead === 1 ? "Tomorrow" : DAY_NAMES[nextSession.day]);
-      pillHtml = `<span class="pill ${soon ? "soon" : "closed"}">${soon ? "Opening soon" : "Closed"}</span>`;
-      windowHtml = `<span class="window"><b>${when} ${fmt(nextSession.start)}–${fmt(nextSession.end)}</b></span>`;
-    } else if (!isLiveMode && daySessions.length){
-      pillHtml = `<span class="pill closed">Closed now</span>`;
-      const list = daySessions.map(s => `${fmt(s.start)}–${fmt(s.end)}`).join(", ");
-      windowHtml = `<span class="window">${list}</span>`;
-    } else if (place.sessions.length === 0) {
-      pillHtml = `<span class="pill closed">Unverified</span>`;
-      windowHtml = `<span class="window">—</span>`;
+    // The line under the name: today's windows, phrased like the NOW
+    // dashboard — "Open 10am–6pm" for libraries, "<program> 4:30pm–8pm"
+    // for pools, "Closed today" when nothing is scheduled.
+    let detail;
+    if (place.sessions.length === 0){
+      detail = "Hours not verified";
+    } else if (daySessions.length){
+      const windows = daySessions.map(s => `${fmt(s.start)}–${fmt(s.end)}`).join(", ");
+      detail = kind === "library" ? `Open ${windows}` : `${programName(place)} ${windows}`;
     } else {
-      pillHtml = `<span class="pill closed">Closed</span>`;
-      windowHtml = `<span class="window">—</span>`;
+      detail = isLiveMode ? "Closed today" : "Closed";
     }
 
+    // Nothing left today — say when it next opens, so a closed row is
+    // still useful to read.
+    if (isLiveMode && !activeSession && nextSession && !daySessions.length){
+      const when = daysAhead === 1 ? "tomorrow" : DAY_NAMES[nextSession.day];
+      detail += ` · next ${when} ${fmt(nextSession.start)}`;
+    }
+
+    // Open/Closed is a statement about right now, so it only belongs in
+    // live mode — when browsing another day the hours line says it all.
+    let statusHtml = "";
+    if (isLiveMode){
+      let statusClass = "closed", statusText = "Closed";
+      if (activeSession){
+        statusClass = "open"; statusText = "Open";
+      } else if (nextSession && daysAhead === 0
+                 && (toMinutes(nextSession.start) - mins) <= 90){
+        statusClass = "soon"; statusText = "Soon";
+      }
+      statusHtml = `<span class="now-status ${statusClass}">${statusText}</span>`;
+    }
+
+    const row = document.createElement("div");
+    row.className = "now-row";
     row.innerHTML = `
-      <div>
-        <div class="place-name">${place.name}</div>
-        <div class="place-meta"><a href="${place.url}" target="_blank" rel="noopener">${place.address} · ${place.desc}</a></div>
+      <div class="now-facility">
+        <strong><a href="${place.url}" target="_blank" rel="noopener" title="${place.address}">${place.name}</a></strong>
+        <span>${detail}</span>
       </div>
-      <div class="status">
-        ${pillHtml}
-        ${windowHtml}
-      </div>
+      ${statusHtml}
     `;
-    board.appendChild(row);
+    section.appendChild(row);
   });
 
-  return board;
+  return section;
 }
 
 function render(){
   const now = new Date();
-  const day = now.getDay();
 
-  document.getElementById("now-str").textContent =
-    `${DAY_NAMES[day]} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  const dateEl = document.getElementById("now-date");
+  dateEl.dateTime = now.toISOString();
+  dateEl.textContent = selectedDay === null
+    ? new Intl.DateTimeFormat(undefined, {
+        weekday: "long", month: "long", day: "numeric",
+      }).format(now)
+    : `${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][selectedDay]} schedule`;
 
   renderDayTabs();
 
@@ -268,16 +289,12 @@ function render(){
   boardsEl.innerHTML = "";
 
   const CATEGORIES = [
-    { title: "🏊 Family Swim", places: POOLS },
-    { title: "📚 Library", places: LIBRARIES },
+    { label: "Libraries", places: LIBRARIES, kind: "library" },
+    { label: "Pools", places: POOLS, kind: "pool" },
   ];
 
   CATEGORIES.forEach(cat => {
-    const heading = document.createElement("div");
-    heading.className = "section-title";
-    heading.textContent = cat.title;
-    boardsEl.appendChild(heading);
-    boardsEl.appendChild(renderBoard(cat.places));
+    boardsEl.appendChild(renderSection(cat.label, cat.places, cat.kind));
   });
 }
 

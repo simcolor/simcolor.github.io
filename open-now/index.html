@@ -3,33 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#12403c">
+<meta name="theme-color" content="#fbf8ef">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Open Now">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Now">
 <meta name="format-detection" content="telephone=no">
 <title>Open Right Now</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap">
+<main class="now-page">
 
-  <header>
-    <div class="eyebrow">Live status</div>
-    <h1>Open Right Now</h1>
-    <p class="sub">Family swim sessions and library hours nearby, at a glance. Hours are entered by hand from each official schedule, not scraped live, so they can lag behind seasonal changes.</p>
-    <div class="clock">Now: <b id="now-str">—</b></div>
+  <header class="now-header">
+    <h1>Now</h1>
+    <time id="now-date">Today</time>
   </header>
 
-  <div class="day-tabs" id="day-tabs"></div>
+  <div class="now-filters" id="day-tabs"></div>
 
   <div id="boards"></div>
 
-  <footer>
+  <footer class="now-footer">
     Hours are maintained by hand and may be out of date — confirm on the official site before heading out. Sources: city recreation departments and public library systems for the East Bay (El Cerrito, Richmond, Albany, Berkeley).
   </footer>
 
-</div>
+</main>
 
 <script src="app.js"></script>
 </body>
