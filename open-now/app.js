@@ -56,16 +56,6 @@ const POOLS = [
     ]
   },
   {
-    name: "Richmond Plunge",
-    address: "1 E Richmond Ave, Richmond",
-    desc: "Family Rec Swim (Shallow Rec)",
-    url: "https://www.richmondca.gov/2140/Richmond-Plunge",
-    sessions: [
-      { day:6, start:"13:30", end:"15:30" },
-      // Weekdays are mostly lap swim / masters, not family swim.
-    ]
-  },
-  {
     name: "West Campus Pool",
     address: "2100 Browning St, Berkeley",
     desc: "Family Swim (Shallow) · Fall sched. 8/10–10/11",

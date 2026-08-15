@@ -47,7 +47,6 @@ If a place's hours are truly unverified, leave `sessions: []` and put a
 | Venue | Source URL | Program to look for | Update cadence |
 |---|---|---|---|
 | El Cerrito Swim Center | https://www.elcerrito.gov/150/Swim-Center | "rECswim" / "Family Swim" | Seasonal — page states effective dates (e.g. "Beginning 6/17") |
-| Richmond Plunge | https://www.richmondca.gov/2140/Richmond-Plunge (schedule PDF linked from https://www.ci.richmond.ca.us/421/Aquatics) | "Family Recreation Swim / Shallow Rec" | Seasonal (Spring/Summer/Fall schedule PDFs) |
 | King Pool | https://berkeleyca.gov/community-recreation/parks-recreation/facilities/pools-and-aquatic-programs/king-pool | "Family Swim (Shallow)" table | Whenever the linked schedule period (shown at top of page, e.g. "Aug 10-Oct 11") ends |
 | West Campus Pool | https://berkeleyca.gov/community-recreation/parks-recreation/facilities/pools-and-aquatic-programs/west-campus-pool | "Family Swim (Shallow)" table | Same as King Pool — Berkeley posts both on the same cycle |
 | Albany Aquatic Center | https://www.albanyaquaticcenter.com/pool-schedule (schedule is posted as an image/PDF, not plain text — may need the user to screenshot or forward the PDF) | "Family/Rec Swim" row, **Indoor Pool** table only | **Weekly** — Albany posts a new week-by-week schedule |
@@ -55,9 +54,9 @@ If a place's hours are truly unverified, leave `sessions: []` and put a
 Known gaps, don't silently fix by guessing:
 - **Albany outdoor pool** has no separately-listed Family/Rec Swim program.
   Leave it unmodeled unless a future schedule clarifies it.
-- **Richmond Plunge weekdays** are lap swim / masters, not family swim —
-  only Saturday is currently modeled. Recheck if the weekly PDF changes
-  this.
+- **Richmond Plunge** was removed on purpose — it isn't a pool this
+  household uses, and its posted schedule had drifted. Don't add it back
+  unless asked.
 - **One-off closures** (holidays, special events, e.g. "9/20: closed AM for
   Albany Triathlon") are not modeled — the schema only supports a weekly
   recurring pattern, not date-specific overrides. If these become a
